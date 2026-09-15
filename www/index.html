@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered automotive parts identification and fitment workspace">
+    <title>WhatPart? | Identify automotive parts</title>
+    <style>
+        :root {
+            --ink: #172126;
+            --muted: #66757a;
+            --line: #dce5e4;
+            --panel: #ffffff;
+            --mint: #b9eadc;
+            --teal: #087f78;
+            --orange: #ee754a;
+            --shadow: 0 20px 55px rgba(23, 33, 38, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            color: var(--ink);
+            background:
+                linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
+                repeating-linear-gradient(0deg, transparent 0, transparent 31px, rgba(8, 127, 120, 0.06) 32px),
+                repeating-linear-gradient(90deg, transparent 0, transparent 31px, rgba(8, 127, 120, 0.06) 32px),
+                #edf5f0;
+            font-family: Georgia, 'Times New Roman', serif;
+        }
+
+        .shell { max-width: 1180px; margin: 0 auto; padding: 30px 28px 54px; }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: 62px;
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+        .brand-mark {
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            color: #fff;
+            background: var(--teal);
+            border-radius: 11px 11px 11px 3px;
+            font-family: Arial, sans-serif;
+            font-size: 19px;
+            font-weight: 800;
+            transform: rotate(-5deg);
+        }
+        .brand-name { font-size: 23px; font-weight: 700; letter-spacing: -0.6px; }
+        .brand-name span { color: var(--teal); }
+        .header-note { margin: 0; color: var(--muted); font-family: Arial, sans-serif; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+        .intro { max-width: 680px; margin-bottom: 36px; }
+        .eyebrow { margin: 0 0 14px; color: var(--orange); font-family: Arial, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; }
+        h1 { max-width: 650px; margin: 0; font-size: clamp(42px, 6vw, 76px); font-weight: 500; line-height: 0.96; letter-spacing: -3px; }
+        .intro-copy { max-width: 510px; margin: 22px 0 0; color: var(--muted); font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6; }
+
+        .workspace { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr); gap: 22px; }
+        .panel { background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(220, 229, 228, 0.9); border-radius: 20px; box-shadow: var(--shadow); }
+        .upload-panel { padding: 10px; }
+        .drop-zone {
+            display: flex;
+            min-height: 365px;
+            padding: 36px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 1.5px dashed #8ccfc1;
+            border-radius: 14px;
+            background: linear-gradient(145deg, #f7fffb, #e9f8f1);
+            transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+        }
+        .drop-zone.dragging, .drop-zone:hover { border-color: var(--teal); background: #e1f6ed; transform: translateY(-2px); }
+        .upload-icon { display: grid; place-items: center; width: 64px; height: 64px; margin-bottom: 22px; color: var(--teal); background: var(--mint); border-radius: 50%; font: 31px Arial, sans-serif; }
+        .drop-zone h2 { margin: 0 0 9px; font-size: 28px; font-weight: 500; }
+        .drop-zone p { margin: 0 0 25px; color: var(--muted); font-family: Arial, sans-serif; font-size: 13px; }
+        .source-choice { display: flex; gap: 8px; margin: 0 0 22px; font: 12px Arial, sans-serif; }
+        .source-choice label { display: flex; align-items: center; gap: 7px; padding: 9px 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: rgba(255, 255, 255, 0.7); }
+        .source-choice label:has(input:checked) { color: var(--teal); border-color: #8ccfc1; background: #e7f7f0; }
+        .source-choice input { accent-color: var(--teal); }
+        .vehicle-fields { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: min(100%, 410px); margin: 0 auto 22px; text-align: left; }
+        .vehicle-fields label { color: var(--muted); font: 10px Arial, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; }
+        .vehicle-fields input { width: 100%; margin-top: 5px; padding: 9px 10px; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; background: #fff; font: 13px Arial, sans-serif; }
+        .vehicle-fields input:focus { outline: 2px solid rgba(8, 127, 120, 0.25); border-color: var(--teal); }
+        .camera-button { display: inline-flex; align-items: center; gap: 8px; margin-top: 9px; padding: 10px 14px; color: var(--teal); border: 1px solid #9acfc4; border-radius: 8px; cursor: pointer; background: transparent; font: 700 12px Arial, sans-serif; }
+        .camera-button:hover { background: #e7f7f0; }
+        .upload-button { display: inline-flex; align-items: center; gap: 9px; padding: 13px 18px; color: #fff; background: var(--teal); border: 0; border-radius: 9px; cursor: pointer; font: 700 13px Arial, sans-serif; transition: background 180ms ease, transform 180ms ease; }
+        .upload-button:hover { background: #05655f; transform: translateY(-1px); }
+        .upload-button span { font-size: 19px; font-weight: 400; line-height: 10px; }
+        input[type="file"] { display: none; }
+        .file-status { min-height: 18px; margin: 18px 0 0; color: var(--teal); font: 12px Arial, sans-serif; }
+
+        .results-panel { padding: 28px; }
+        .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 23px; border-bottom: 1px solid var(--line); }
+        .panel-heading h2 { margin: 0; font-size: 25px; font-weight: 500; }
+        .status { padding: 6px 9px; color: #1e765d; background: #e2f4eb; border-radius: 99px; font: 700 10px Arial, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+        .empty-state { padding: 46px 8px 39px; text-align: center; }
+        .empty-state strong { display: block; margin-bottom: 10px; font-size: 18px; font-weight: 500; }
+        .empty-state p { margin: 0 auto; max-width: 250px; color: var(--muted); font: 13px/1.6 Arial, sans-serif; }
+        .recent { padding-top: 22px; border-top: 1px solid var(--line); }
+        .recent-label { margin: 0 0 13px; color: var(--muted); font: 700 10px Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
+        .recent-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #edf1f0; }
+        .recent-thumb { width: 34px; height: 34px; border-radius: 8px; background: #e5eeeb; }
+        .recent-row p { flex: 1; margin: 0; font: 12px Arial, sans-serif; }
+        .recent-row time { color: var(--muted); font: 11px Arial, sans-serif; }
+        .result-content { padding: 28px 0 25px; }
+        .result-content[hidden] { display: none; }
+        .result-kicker { margin: 0 0 8px; color: var(--teal); font: 700 10px Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
+        .result-name { margin: 0 0 8px; font-size: 30px; font-weight: 500; line-height: 1.05; }
+        .result-description { margin: 0; color: var(--muted); font: 13px/1.55 Arial, sans-serif; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+        .result-detail { padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #f8fbf9; }
+        .result-detail span { display: block; margin-bottom: 5px; color: var(--muted); font: 10px Arial, sans-serif; text-transform: uppercase; }
+        .result-detail strong { font: 700 13px Arial, sans-serif; }
+        .purchase-links { margin-top: 23px; padding-top: 20px; border-top: 1px solid var(--line); }
+        .purchase-links h4 { margin: 0 0 12px; font: 700 10px Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+        .purchase-list { display: grid; gap: 8px; }
+        .purchase-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; color: var(--ink); border: 1px solid var(--line); border-radius: 9px; text-decoration: none; font: 700 12px Arial, sans-serif; }
+        .purchase-link:hover { color: var(--teal); border-color: #8ccfc1; background: #f4fbf8; }
+        .purchase-link span { color: var(--muted); font-size: 16px; font-weight: 400; }
+        .fitment { margin-top: 22px; padding: 14px; border-radius: 10px; background: #f1f8f4; }
+        .fitment h4, .cross-references h4 { margin: 0 0 7px; font: 700 10px Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+        .fitment p { margin: 0; color: var(--ink); font: 12px/1.5 Arial, sans-serif; }
+        .fitment .catalog-status { margin-top: 7px; color: var(--muted); font-size: 11px; }
+        .cross-references { margin-top: 20px; }
+        .cross-reference-list { display: grid; gap: 7px; }
+        .cross-reference { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font: 12px Arial, sans-serif; }
+        .cross-reference strong { color: var(--teal); }
+        .cross-reference span { color: var(--muted); text-align: right; }
+        .scan-error { margin: 24px 0; padding: 12px; color: #9d482d; border-radius: 9px; background: #fff0eb; font: 12px/1.45 Arial, sans-serif; }
+        .scan-again { margin-top: 18px; padding: 10px 13px; color: var(--teal); background: transparent; border: 1px solid #9acfc4; border-radius: 8px; cursor: pointer; font: 700 11px Arial, sans-serif; }
+
+        footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 27px; color: var(--muted); font: 11px Arial, sans-serif; }
+        footer p { margin: 0; }
+
+        @media (max-width: 760px) {
+            .shell { padding: 22px 16px 35px; }
+            header { margin-bottom: 47px; }
+            .header-note { display: none; }
+            h1 { font-size: 53px; letter-spacing: -2px; }
+            .workspace { grid-template-columns: 1fr; }
+            .drop-zone { min-height: 310px; padding: 26px; }
+            footer { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header>
+            <a class="brand" href="./" aria-label="WhatPart home">
+                <span class="brand-mark">?</span>
+                <span class="brand-name">what<span>part</span>?</span>
+            </a>
+            <p class="header-note">Automotive intelligence / 01</p>
+        </header>
+
+        <section class="intro" aria-labelledby="page-title">
+            <p class="eyebrow">Identify. Match. Move on.</p>
+            <h1 id="page-title">Know what you’re looking at.</h1>
+            <p class="intro-copy">Upload a photo of an automotive part and get its name, compatible vehicles, and trusted alternatives in seconds.</p>
+        </section>
+
+        <section class="workspace" aria-label="Part identification workspace">
+            <div class="panel upload-panel">
+                <div class="drop-zone" id="drop-zone">
+                    <div class="upload-icon" aria-hidden="true">+</div>
+                    <h2>Drop a part photo here</h2>
+                    <p>JPG, PNG, or WEBP up to 10 MB</p>
+                    <div class="source-choice" aria-label="Preferred part source">
+                        <label><input type="radio" name="source" value="aftermarket" checked> Aftermarket</label>
+                        <label><input type="radio" name="source" value="oem"> OEM</label>
+                    </div>
+                    <div class="vehicle-fields" aria-label="Vehicle details">
+                        <label>Year<input id="vehicle-year" type="number" min="1886" max="2100" placeholder="2020"></label>
+                        <label>Make<input id="vehicle-make" type="text" placeholder="Toyota"></label>
+                        <label>Model<input id="vehicle-model" type="text" placeholder="Tacoma"></label>
+                        <label>Engine<input id="vehicle-engine" type="text" placeholder="3.5L V6"></label>
+                    </div>
+                    <label class="upload-button" for="part-photo"><span>+</span> Choose photo</label>
+                    <label class="camera-button" for="camera-photo"><span aria-hidden="true">◉</span> Take a photo under the hood</label>
+                    <input id="part-photo" type="file" accept="image/jpeg,image/png,image/webp">
+                    <input id="camera-photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+                    <p class="file-status" id="file-status" aria-live="polite"></p>
+                </div>
+            </div>
+
+            <aside class="panel results-panel" aria-labelledby="results-title">
+                <div class="panel-heading">
+                    <h2 id="results-title">Your results</h2>
+                    <span class="status" id="result-status">Ready</span>
+                </div>
+                <div class="empty-state" id="empty-state">
+                    <strong>No part scanned yet</strong>
+                    <p>Your identification results and fitment matches will appear here.</p>
+                </div>
+                <div class="result-content" id="result-content" hidden>
+                    <p class="result-kicker">Likely match</p>
+                    <h3 class="result-name" id="result-name"></h3>
+                    <p class="result-description" id="result-description"></p>
+                    <div class="result-grid">
+                        <div class="result-detail"><span>Confidence</span><strong id="result-confidence"></strong></div>
+                        <div class="result-detail"><span>Part number</span><strong id="result-part-number"></strong></div>
+                    </div>
+                    <div class="fitment">
+                        <h4 id="fitment-title">Vehicle fitment</h4>
+                        <p id="fitment-summary"></p>
+                        <p id="catalog-status" class="catalog-status"></p>
+                    </div>
+                    <div class="cross-references" id="cross-references" hidden>
+                        <h4>Cross-reference candidates</h4>
+                        <div class="cross-reference-list" id="cross-reference-list"></div>
+                    </div>
+                    <div class="purchase-links" id="purchase-links" hidden>
+                        <h4>Shop this match</h4>
+                        <div class="purchase-list" id="purchase-list"></div>
+                    </div>
+                    <button class="scan-again" id="scan-again" type="button">Scan another part</button>
+                </div>
+                <div class="recent">
+                    <p class="recent-label">Recent scans</p>
+                    <div class="recent-row">
+                        <span class="recent-thumb" aria-hidden="true"></span>
+                        <p>Nothing here yet</p>
+                        <time>—</time>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <footer>
+            <p>Built for the curious mechanic.</p>
+            <p>Part identification, without the guesswork.</p>
+        </footer>
+    </main>
+
+    <script src="mobile-api-config.js"></script>
+    <script>
+        const apiBaseUrl = (window.WHATPART_API_URL || '').replace(/\/$/, '');
+        const fileInput = document.querySelector('#part-photo');
+        const cameraInput = document.querySelector('#camera-photo');
+        const dropZone = document.querySelector('#drop-zone');
+        const fileStatus = document.querySelector('#file-status');
+        const emptyState = document.querySelector('#empty-state');
+        const resultContent = document.querySelector('#result-content');
+        const resultStatus = document.querySelector('#result-status');
+        const scanAgain = document.querySelector('#scan-again');
+        const purchaseLinks = document.querySelector('#purchase-links');
+        const purchaseList = document.querySelector('#purchase-list');
+        const fitmentSummary = document.querySelector('#fitment-summary');
+        const catalogStatus = document.querySelector('#catalog-status');
+        const crossReferences = document.querySelector('#cross-references');
+        const crossReferenceList = document.querySelector('#cross-reference-list');
+
+        const resultFields = {
+            name: document.querySelector('#result-name'),
+            description: document.querySelector('#result-description'),
+            confidence: document.querySelector('#result-confidence'),
+            partNumber: document.querySelector('#result-part-number')
+        };
+
+        async function identifyFile(file) {
+            if (!file) return;
+            fileStatus.textContent = `${file.name} is ready to scan.`;
+            resultStatus.textContent = 'Scanning';
+            emptyState.hidden = true;
+            resultContent.hidden = true;
+
+            const formData = new FormData();
+            formData.append('photo', file);
+            formData.append('source', document.querySelector('input[name="source"]:checked').value);
+            formData.append('vehicle', JSON.stringify({
+                year: document.querySelector('#vehicle-year').value,
+                make: document.querySelector('#vehicle-make').value,
+                model: document.querySelector('#vehicle-model').value,
+                engine: document.querySelector('#vehicle-engine').value
+            }));
+
+            try {
+                if (window.location.protocol === 'file:') {
+                    throw new Error('Start the app with "npm start", then open http://localhost:3000 instead of opening index.html directly.');
+                }
+
+                const response = await fetch(`${apiBaseUrl}/api/identify`, { method: 'POST', body: formData });
+                const responseText = await response.text();
+                let result;
+
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error('The upload server returned an unexpected response. Start WhatPart with "npm start" and open http://localhost:3000.');
+                }
+
+                if (!response.ok) throw new Error(result.error || 'The scan could not be completed.');
+
+                resultFields.name.textContent = result.partName;
+                resultFields.description.textContent = result.description;
+                resultFields.confidence.textContent = `${result.confidence}%`;
+                resultFields.partNumber.textContent = result.partNumber || 'Not found';
+                fitmentSummary.textContent = result.fitmentSummary || 'Vehicle details were not provided.';
+                catalogStatus.textContent = result.catalogVerified
+                    ? `${result.catalogStatus} (${result.catalogProvider})`
+                    : `${result.catalogStatus || 'AI candidate only'}. Confirm before ordering.`;
+                crossReferenceList.replaceChildren();
+                (result.crossReferences || []).forEach((reference) => {
+                    const row = document.createElement('div');
+                    row.className = 'cross-reference';
+                    const number = document.createElement('strong');
+                    number.textContent = reference.partNumber || 'Unknown';
+                    const details = document.createElement('span');
+                    details.textContent = [reference.brand, reference.notes].filter(Boolean).join(' · ');
+                    row.append(number, details);
+                    crossReferenceList.append(row);
+                });
+                crossReferences.hidden = !result.crossReferences?.length;
+                purchaseList.replaceChildren();
+                (result.purchaseLinks || []).forEach((link) => {
+                    const anchor = document.createElement('a');
+                    anchor.className = 'purchase-link';
+                    anchor.href = link.url;
+                    anchor.target = '_blank';
+                    anchor.rel = 'noopener noreferrer';
+                    anchor.textContent = link.label;
+                    const arrow = document.createElement('span');
+                    arrow.textContent = '↗';
+                    anchor.append(arrow);
+                    purchaseList.append(anchor);
+                });
+                purchaseLinks.hidden = !result.purchaseLinks?.length;
+                resultContent.hidden = false;
+                resultStatus.textContent = result.demo ? 'Demo result' : 'Identified';
+                fileStatus.textContent = `${file.name} has been scanned.`;
+            } catch (error) {
+                emptyState.hidden = false;
+                emptyState.replaceChildren();
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'scan-error';
+                errorMessage.textContent = error.message;
+                emptyState.append(errorMessage);
+                resultStatus.textContent = 'Needs attention';
+            }
+        }
+
+        fileInput.addEventListener('change', () => identifyFile(fileInput.files[0]));
+        cameraInput.addEventListener('change', () => identifyFile(cameraInput.files[0]));
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropZone.classList.add('dragging');
+            });
+        });
+        ['dragleave', 'drop'].forEach((eventName) => {
+            dropZone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                dropZone.classList.remove('dragging');
+            });
+        });
+        dropZone.addEventListener('drop', (event) => identifyFile(event.dataTransfer.files[0]));
+        scanAgain.addEventListener('click', () => fileInput.click());
+    </script>
+</body>
+</html>
