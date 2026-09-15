@@ -1,0 +1,10 @@
+{
+  "appId": "com.whatpart.app",
+  "appName": "WhatPart",
+  "webDir": ".",
+  "plugins": {
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    }
+  }
+}
