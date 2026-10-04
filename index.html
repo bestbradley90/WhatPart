@@ -6,27 +6,819 @@
 <meta name="description" content="AI-powered automotive parts identification and fitment workspace">
 <title>WhatPart? — Know your parts</title>
 <style>
-:root{color-scheme:dark;--bg:#090b10;--surface:#11151d;--surface-2:#171c26;--line:#283141;--text:#f4f7fb;--muted:#8e9bad;--cyan:#56e0e7;--purple:#9d7bff;--orange:#ff8a5b;--good:#5ee6a8;--shadow:0 24px 70px #0008}
-*{box-sizing:border-box}html{min-width:320px}body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(circle at 10% 0%,#172344 0,transparent 32rem),radial-gradient(circle at 100% 20%,#281743 0,transparent 34rem),var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background-image:linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);background-size:64px 64px;mask-image:linear-gradient(to bottom,#000,transparent 75%)}
-.shell{position:relative;max-width:1180px;margin:auto;padding:28px 24px 48px}.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:86px}.brand{display:flex;align-items:center;gap:11px;color:var(--text);text-decoration:none;font-weight:800;letter-spacing:-.04em;font-size:21px}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px 12px 12px 4px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#081016;font-weight:950;box-shadow:0 0 28px #56e0e766;transform:rotate(-5deg)}.brand span span{color:var(--cyan)}.top-note{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.pulse{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 12px var(--good)}
-.hero{max-width:760px;margin-bottom:42px}.eyebrow{margin:0 0 16px;color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase}.hero h1{margin:0;font-size:clamp(48px,8vw,92px);line-height:.92;letter-spacing:-.075em}.hero h1 em{font-style:normal;color:transparent;background:linear-gradient(100deg,var(--cyan),#b9a5ff);background-clip:text}.hero-copy{max-width:590px;margin:24px 0 0;color:var(--muted);font-size:17px;line-height:1.6}
-.workspace{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);gap:20px}.panel{border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,#151b26e8,#0e1219e8);box-shadow:var(--shadow);backdrop-filter:blur(16px)}.upload-panel{padding:12px}.drop-zone{min-height:480px;padding:36px;border:1px dashed #3c6b84;border-radius:17px;background:linear-gradient(145deg,#162536,#121724);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:.2s}.drop-zone.dragging,.drop-zone:hover{border-color:var(--cyan);background:linear-gradient(145deg,#173343,#181b35);transform:translateY(-2px)}.upload-icon{display:grid;place-items:center;width:70px;height:70px;margin-bottom:22px;border:1px solid #56e0e755;border-radius:21px;color:var(--cyan);background:#56e0e714;font-size:35px;box-shadow:0 0 35px #56e0e722}.drop-zone h2{margin:0 0 9px;font-size:28px;letter-spacing:-.04em}.drop-zone>p{margin:0 0 24px;color:var(--muted);font-size:13px}.source-choice{display:flex;gap:8px;margin-bottom:20px}.source-choice label{padding:9px 13px;border:1px solid var(--line);border-radius:9px;color:var(--muted);cursor:pointer;font-size:12px;font-weight:700}.source-choice label:has(input:checked){border-color:#56e0e788;color:var(--cyan);background:#56e0e714}.source-choice input{accent-color:var(--cyan)}.vehicle-fields{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;width:min(100%,430px);margin-bottom:22px;text-align:left}.vehicle-fields label{color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.vehicle-fields input{width:100%;margin-top:6px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;outline:0;color:var(--text);background:#0b0f16;font:inherit;font-size:13px}.vehicle-fields input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #56e0e71c}.upload-button,.camera-button{display:inline-flex;align-items:center;gap:8px;cursor:pointer;border-radius:10px;font-size:13px;font-weight:800}.upload-button{padding:13px 18px;background:linear-gradient(100deg,var(--cyan),#7cb8ff);color:#071016;box-shadow:0 8px 24px #56e0e733}.camera-button{margin-top:10px;padding:10px 14px;border:1px solid #56e0e755;color:var(--cyan);background:#56e0e70d}input[type=file]{display:none}.file-status{min-height:18px;margin:17px 0 0;color:var(--cyan)!important;font-size:12px!important}
-.results-panel{padding:27px}.panel-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding-bottom:22px;border-bottom:1px solid var(--line)}.panel-heading h2{margin:0;font-size:25px;letter-spacing:-.04em}.status{padding:6px 9px;border-radius:99px;color:var(--good);background:#5ee6a814;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.empty-state{padding:55px 8px 46px;text-align:center}.empty-state strong{display:block;margin-bottom:10px;font-size:19px}.empty-state p{max-width:255px;margin:auto;color:var(--muted);font-size:13px;line-height:1.6}.result-content{padding:27px 0 24px}.result-content[hidden]{display:none}.result-kicker{margin:0 0 8px;color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.result-name{margin:0 0 9px;font-size:31px;line-height:1.05;letter-spacing:-.05em}.result-description{margin:0;color:var(--muted);font-size:13px;line-height:1.6}.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:22px}.result-detail{padding:13px;border:1px solid var(--line);border-radius:11px;background:#0b0f16}.result-detail span{display:block;margin-bottom:6px;color:var(--muted);font-size:10px;text-transform:uppercase}.result-detail strong{font-size:13px}.fitment{margin-top:20px;padding:15px;border:1px solid #5ee6a81f;border-radius:11px;background:#5ee6a80b}.fitment h4,.cross-references h4,.purchase-links h4{margin:0 0 8px;color:var(--muted);font-size:10px;letter-spacing:.14em;text-transform:uppercase}.fitment p{margin:0;font-size:12px;line-height:1.55}.fitment .catalog-status{margin-top:7px;color:var(--muted);font-size:11px}.cross-references,.purchase-links{margin-top:21px}.cross-reference-list,.purchase-list{display:grid;gap:7px}.cross-reference{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}.cross-reference strong{color:var(--cyan)}.cross-reference span{color:var(--muted);text-align:right}.purchase-links{padding-top:19px;border-top:1px solid var(--line)}.purchase-link{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border:1px solid var(--line);border-radius:9px;color:var(--text);text-decoration:none;font-size:12px;font-weight:700}.purchase-link:hover{border-color:#56e0e777;color:var(--cyan);background:#56e0e70d}.purchase-link span{color:var(--cyan);font-size:17px}.scan-error{margin:24px 0;padding:13px;color:#ffae98;border:1px solid #ff8a5b44;border-radius:9px;background:#ff8a5b12;font-size:12px;line-height:1.5}.scan-again{margin-top:18px;padding:10px 13px;border:1px solid #56e0e755;border-radius:9px;color:var(--cyan);background:transparent;cursor:pointer;font-size:11px;font-weight:800}.recent{padding-top:21px;border-top:1px solid var(--line)}.recent-label{margin:0 0 12px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}.recent-row{display:flex;align-items:center;gap:12px;padding:10px 0;color:var(--muted);font-size:12px}.recent-thumb{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#23344a,#211d3a)}.recent-row p{flex:1;margin:0}.recent-row time{font-size:11px}footer{display:flex;justify-content:space-between;gap:20px;margin-top:24px;color:#657185;font-size:11px}footer p{margin:0}
-@media(max-width:760px){.shell{padding:22px 15px 34px}.topbar{margin-bottom:62px}.top-note{display:none}.hero h1{font-size:54px}.hero-copy{font-size:15px}.workspace{grid-template-columns:1fr}.drop-zone{min-height:420px;padding:24px}.results-panel{padding:22px}footer{flex-direction:column}.vehicle-fields{width:100%}}
+:root {
+  --bg: #07141f;
+  --bg-2: #0d1f2d;
+  --panel: rgba(15, 24, 35, 0.9);
+  --panel-strong: rgba(18, 31, 44, 0.96);
+  --card: rgba(22, 37, 54, 0.96);
+  --line: rgba(127, 160, 190, 0.22);
+  --text: #edf7ff;
+  --muted: #9bb6c9;
+  --cyan: #52d9ff;
+  --blue: #7ba4ff;
+  --orange: #ff8a4a;
+  --orange-strong: #ff6b57;
+  --green: #8ef2a4;
+  --purple: #9d7bff;
+  --shadow: 0 24px 65px rgba(1, 8, 18, 0.45);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(82, 217, 255, 0.22), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(255, 138, 74, 0.2), transparent 26%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+  letter-spacing: -0.02em;
+}
+
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; }
+
+.shell {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 28px 22px 42px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 54px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 900;
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  letter-spacing: -0.05em;
+}
+
+.brand-mark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--orange), var(--orange-strong));
+  box-shadow: 0 14px 30px rgba(255, 122, 73, 0.32);
+  color: #170d0d;
+  font-weight: 900;
+}
+
+.brand span span {
+  color: var(--cyan);
+}
+
+.top-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(10, 17, 25, 0.74);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pulse {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 0 rgba(142, 242, 164, 0.7);
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(142, 242, 164, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(142, 242, 164, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(142, 242, 164, 0); }
+}
+
+.hero {
+  max-width: 760px;
+  margin-bottom: 38px;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  color: var(--cyan);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(3rem, 6vw, 5.25rem);
+  letter-spacing: -0.07em;
+  line-height: 0.95;
+  font-weight: 900;
+}
+
+.hero h1 em {
+  color: var(--cyan);
+  font-style: normal;
+  text-shadow: 0 0 28px rgba(82, 217, 255, 0.32);
+}
+
+.hero-copy {
+  max-width: 620px;
+  margin: 18px 0 0;
+  font-size: 1.08rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.primary-cta,
+.secondary-cta,
+.upload-button,
+.camera-button,
+.action-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+
+.primary-cta,
+.upload-button,
+.camera-button {
+  background: linear-gradient(135deg, var(--orange), var(--orange-strong));
+  color: white;
+  box-shadow: 0 18px 32px rgba(255, 122, 63, 0.25);
+}
+
+.secondary-cta,
+.action-chip {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+
+.primary-cta:hover,
+.secondary-cta:hover,
+.upload-button:hover,
+.camera-button:hover,
+.action-chip:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 24px;
+}
+
+.panel {
+  background: linear-gradient(180deg, rgba(17, 28, 39, 0.94), rgba(10, 18, 26, 0.95));
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.upload-panel {
+  padding: 18px;
+}
+
+.drop-zone {
+  min-height: 500px;
+  padding: 28px 26px;
+  border-radius: 22px;
+  border: 1.5px dashed rgba(137, 175, 206, 0.38);
+  background:
+    linear-gradient(180deg, rgba(11, 24, 33, 0.7), rgba(15, 22, 31, 0.85));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.upload-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(82, 217, 255, 0.18), rgba(157, 123, 255, 0.22));
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  color: var(--cyan);
+  font-size: 2.3rem;
+  font-weight: 300;
+  border: 1px solid rgba(82, 217, 255, 0.3);
+}
+
+.drop-zone h2 {
+  margin: 0;
+  font-size: clamp(1.7rem, 2vw, 2.3rem);
+  letter-spacing: -0.05em;
+}
+
+.drop-zone p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.96rem;
+}
+
+.source-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.source-choice label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.source-choice input {
+  accent-color: var(--orange);
+}
+
+.vehicle-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 620px);
+  margin-top: 18px;
+}
+
+.vehicle-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.vehicle-fields input {
+  background: rgba(8, 14, 20, 0.8);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text);
+  padding: 12px 14px;
+  font: inherit;
+}
+
+.vehicle-fields input::placeholder {
+  color: rgba(155, 182, 201, 0.8);
+}
+
+.vehicle-fields input:focus {
+  outline: none;
+  border-color: rgba(82, 217, 255, 0.7);
+  box-shadow: 0 0 0 3px rgba(82, 217, 255, 0.12);
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.upload-button,
+.camera-button {
+  min-height: 50px;
+  padding: 12px 18px;
+  font-size: 0.96rem;
+}
+
+#part-photo, #camera-photo {
+  display: none;
+}
+
+.file-status {
+  margin-top: 14px;
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.results-panel {
+  padding: 26px 24px 22px;
+}
+
+.panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-heading h2 {
+  margin: 0;
+  font-size: clamp(1.65rem, 2vw, 2.15rem);
+  letter-spacing: -0.06em;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(142, 242, 164, 0.08);
+  border: 1px solid rgba(142, 242, 164, 0.2);
+  color: var(--green);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 420px;
+  color: var(--muted);
+}
+
+.empty-state .result-illustration {
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(82, 217, 255, 0.16), rgba(157, 123, 255, 0.16));
+  border: 1px solid rgba(82, 217, 255, 0.2);
+  font-size: 2.4rem;
+}
+
+.empty-state h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+
+.empty-state p {
+  max-width: 300px;
+  margin: 10px 0 0;
+  line-height: 1.6;
+}
+
+#result-content[hidden] {
+  display: none;
+}
+
+#result-content {
+  margin-top: 18px;
+}
+
+.result-card {
+  background: linear-gradient(180deg, rgba(21, 35, 49, 0.92), rgba(16, 25, 35, 0.96));
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 18px 18px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.result-label {
+  margin-bottom: 8px;
+  color: var(--cyan);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+#result-name {
+  margin: 0;
+  font-size: clamp(1.7rem, 2vw, 2.15rem);
+  letter-spacing: -0.06em;
+}
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.result-row strong {
+  color: var(--text);
+  font-weight: 800;
+}
+
+#result-description {
+  margin: 16px 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.result-section {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.result-section-title {
+  margin-bottom: 10px;
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+#fitment-summary,
+#catalog-status,
+#cross-reference-list,
+#purchase-list {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+#cross-reference-list,
+#purchase-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#cross-reference-list li,
+#purchase-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(127, 160, 190, 0.12);
+}
+
+#purchase-list li a {
+  color: var(--cyan);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 18px 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+
+@media (max-width: 840px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .drop-zone {
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 620px) {
+  .shell {
+    padding: 18px 14px 36px;
+  }
+
+  .topbar {
+    margin-bottom: 32px;
+  }
+
+  .top-note {
+    display: none;
+  }
+
+  .hero {
+    margin-bottom: 22px;
+  }
+
+  .hero-copy {
+    font-size: 1rem;
+  }
+
+  .vehicle-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-row {
+    flex-direction: column;
+  }
+
+  .upload-button,
+  .camera-button,
+  .primary-cta,
+  .secondary-cta {
+    width: 100%;
+  }
+
+  footer {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
 </style>
 </head>
 <body>
 <main class="shell">
-<header class="topbar"><a class="brand" href="./" aria-label="WhatPart home"><span class="brand-mark">?</span><span>what<span>part</span>?</span></a><div class="top-note"><i class="pulse"></i> AI garage online</div></header>
-<section class="hero"><p class="eyebrow">Identify · Match · Move</p><h1>Know what you're <em>looking at.</em></h1><p class="hero-copy">Snap a photo of any automotive part. Get the likely match, fitment details, and better options without the guesswork.</p></section>
-<section class="workspace" aria-label="Part identification workspace">
-<div class="panel upload-panel"><div class="drop-zone" id="drop-zone"><div class="upload-icon" aria-hidden="true">＋</div><h2>Drop a part photo here</h2><p>JPG, PNG, or WEBP · up to 10 MB</p><div class="source-choice" aria-label="Preferred part source"><label><input type="radio" name="source" value="aftermarket" checked> Aftermarket</label><label><input type="radio" name="source" value="oem"> OEM</label></div><div class="vehicle-fields" aria-label="Vehicle details"><label>Year<input id="vehicle-year" type="number" min="1886" max="2100" placeholder="2020"></label><label>Make<input id="vehicle-make" type="text" placeholder="Toyota"></label><label>Model<input id="vehicle-model" type="text" placeholder="Tacoma"></label><label>Engine<input id="vehicle-engine" type="text" placeholder="3.5L V6"></label></div><label class="upload-button" for="part-photo">＋ Choose photo</label><label class="camera-button" for="camera-photo">◉ Take a photo under the hood</label><input id="part-photo" type="file" accept="image/jpeg,image/png,image/webp"><input id="camera-photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"><p class="file-status" id="file-status" aria-live="polite"></p></div></div>
-<aside class="panel results-panel" aria-labelledby="results-title"><div class="panel-heading"><h2 id="results-title">Your results</h2><span class="status" id="result-status">Ready</span></div><div class="empty-state" id="empty-state"><strong>No part scanned yet</strong><p>Your identification and fitment matches will land here.</p></div><div class="result-content" id="result-content" hidden><p class="result-kicker">Likely match</p><h3 class="result-name" id="result-name"></h3><p class="result-description" id="result-description"></p><div class="result-grid"><div class="result-detail"><span>Confidence</span><strong id="result-confidence"></strong></div><div class="result-detail"><span>Part number</span><strong id="result-part-number"></strong></div></div><div class="fitment"><h4>Vehicle fitment</h4><p id="fitment-summary"></p><p id="catalog-status" class="catalog-status"></p></div><div class="cross-references" id="cross-references" hidden><h4>Cross-reference candidates</h4><div class="cross-reference-list" id="cross-reference-list"></div></div><div class="purchase-links" id="purchase-links" hidden><h4>Shop this match</h4><div class="purchase-list" id="purchase-list"></div></div><button class="scan-again" id="scan-again" type="button">Scan another part</button></div><div class="recent"><p class="recent-label">Recent scans</p><div class="recent-row"><span class="recent-thumb" aria-hidden="true"></span><p>Nothing here yet</p><time>—</time></div></div></aside>
-</section><footer><p>Built for the curious mechanic.</p><p>Part identification, without the guesswork.</p></footer>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="WhatPart home">
+      <span class="brand-mark">?</span>
+      <span>what<span>part</span>?</span>
+    </a>
+    <div class="top-note"><i class="pulse"></i> AI garage online</div>
+  </header>
+
+  <section class="hero" aria-label="Main intro">
+    <p class="eyebrow">Identify · Match · Move</p>
+    <h1>Know what you're <em>looking at.</em></h1>
+    <p class="hero-copy">Snap a photo of any automotive part and get the likely match, fitment notes, and buying links without the garage guesswork.</p>
+    <div class="hero-actions">
+      <button class="primary-cta" type="button" onclick="document.getElementById('part-photo').click();">Scan a part</button>
+      <button class="secondary-cta" type="button" onclick="document.getElementById('camera-photo').click();">Use camera</button>
+    </div>
+  </section>
+
+  <section class="workspace" aria-label="Part identification workspace">
+    <div class="panel upload-panel">
+      <div class="drop-zone" id="drop-zone">
+        <div class="upload-icon" aria-hidden="true">＋</div>
+        <h2>Drop a part photo here</h2>
+        <p>JPG, PNG, or WEBP · up to 10 MB</p>
+
+        <div class="source-choice" aria-label="Preferred part source">
+          <label><input type="radio" name="source" value="aftermarket" checked> Aftermarket</label>
+          <label><input type="radio" name="source" value="oem"> OEM</label>
+        </div>
+
+        <div class="vehicle-fields" aria-label="Vehicle details">
+          <label>Year
+            <input id="vehicle-year" type="number" min="1886" max="2100" placeholder="2020">
+          </label>
+          <label>Make
+            <input id="vehicle-make" type="text" placeholder="Toyota">
+          </label>
+          <label>Model
+            <input id="vehicle-model" type="text" placeholder="Tacoma">
+          </label>
+          <label>Engine
+            <input id="vehicle-engine" type="text" placeholder="3.5L V6">
+          </label>
+        </div>
+
+        <div class="actions-row">
+          <label class="upload-button" for="part-photo">Choose photo</label>
+          <label class="camera-button" for="camera-photo">Take photo</label>
+        </div>
+
+        <input id="part-photo" type="file" accept="image/jpeg,image/png,image/webp">
+        <input id="camera-photo" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+        <p class="file-status" id="file-status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <aside class="panel results-panel" aria-labelledby="results-title">
+      <div class="panel-heading">
+        <h2 id="results-title">Your results</h2>
+        <span class="status" id="result-status">Ready</span>
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        <div class="result-illustration" aria-hidden="true">⚡</div>
+        <h3>Ready for your first scan</h3>
+        <p>Upload a part photo and let the app identify the likely match and fitment.</p>
+      </div>
+
+      <div id="result-content" hidden>
+        <div class="result-card">
+          <div class="result-label">Most likely match</div>
+          <h3 id="result-name">Brake pad set</h3>
+          <div class="result-row"><span>Confidence</span><strong id="result-confidence">86%</strong></div>
+          <div class="result-row"><span>Part number</span><strong id="result-part-number">N/A</strong></div>
+          <p id="result-description">AI-powered identification result for your selected vehicle and part source.</p>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">Fitment summary</div>
+          <div id="fitment-summary"></div>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">Cross references</div>
+          <ul id="cross-reference-list"></ul>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">Buy smarter</div>
+          <ul id="purchase-list"></ul>
+        </div>
+
+        <div class="result-section">
+          <div class="result-section-title">Catalog status</div>
+          <div id="catalog-status"></div>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <footer>
+    <p>Built for the curious mechanic.</p>
+    <p>Part identification, without the guesswork.</p>
+  </footer>
 </main>
-<script src="mobile-api-config.js"></script><script>
-const apiBaseUrl=(window.WHATPART_API_URL||'').replace(/\/$/,''),fileInput=document.querySelector('#part-photo'),cameraInput=document.querySelector('#camera-photo'),dropZone=document.querySelector('#drop-zone'),fileStatus=document.querySelector('#file-status'),emptyState=document.querySelector('#empty-state'),resultContent=document.querySelector('#result-content'),resultStatus=document.querySelector('#result-status'),scanAgain=document.querySelector('#scan-again'),purchaseLinks=document.querySelector('#purchase-links'),purchaseList=document.querySelector('#purchase-list'),fitmentSummary=document.querySelector('#fitment-summary'),catalogStatus=document.querySelector('#catalog-status'),crossReferences=document.querySelector('#cross-references'),crossReferenceList=document.querySelector('#cross-reference-list');
-const resultFields={name:document.querySelector('#result-name'),description:document.querySelector('#result-description'),confidence:document.querySelector('#result-confidence'),partNumber:document.querySelector('#result-part-number')};
-async function identifyFile(file){if(!file)return;fileStatus.textContent=file.name+' is ready to scan.';resultStatus.textContent='Scanning';emptyState.hidden=true;resultContent.hidden=true;const formData=new FormData();formData.append('photo',file);formData.append('source',document.querySelector('input[name="source"]:checked').value);formData.append('vehicle',JSON.stringify({year:document.querySelector('#vehicle-year').value,make:document.querySelector('#vehicle-make').value,model:document.querySelector('#vehicle-model').value,engine:document.querySelector('#vehicle-engine').value}));try{if(location.protocol==='file:')throw Error('Start the app with "npm start", then open http://localhost:3000.');const response=await fetch(apiBaseUrl+'/api/identify',{method:'POST',body:formData});const result=await response.json().catch(()=>{throw Error('The upload server returned an unexpected response.')});if(!response.ok)throw Error(result.error||'The scan could not be completed.');resultFields.name.textContent=result.partName||'Unknown part';resultFields.description.textContent=result.description||'';resultFields.confidence.textContent=typeof result.confidence==='number'?result.confidence+'%':'—';resultFields.partNumber.textContent=result.partNumber||'Not found';fitmentSummary.textContent=result.fitmentSummary||'Vehicle details were not provided.';catalogStatus.textContent=result.catalogVerified?result.catalogStatus+' ('+result.catalogProvider+')':(result.catalogStatus||'AI candidate only')+'. Confirm before ordering.';crossReferenceList.replaceChildren();(Array.isArray(result.crossReferences)?result.crossReferences:[]).forEach(reference=>{const row=document.createElement('div');row.className='cross-reference';const number=document.createElement('strong');number.textContent=reference.partNumber||'Unknown';const details=document.createElement('span');details.textContent=[reference.brand,reference.notes].filter(Boolean).join(' · ');row.append(number,details);crossReferenceList.append(row)});crossReferences.hidden=!result.crossReferences?.length;purchaseList.replaceChildren();(Array.isArray(result.purchaseLinks)?result.purchaseLinks:[]).forEach(link=>{if(!link.url)return;const anchor=document.createElement('a');anchor.className='purchase-link';anchor.href=link.url;anchor.target='_blank';anchor.rel='noopener noreferrer';anchor.textContent=link.label||'Open search';const arrow=document.createElement('span');arrow.textContent='↗';anchor.append(arrow);purchaseList.append(anchor)});purchaseLinks.hidden=!result.purchaseLinks?.length;resultContent.hidden=false;resultStatus.textContent=result.demo?'Demo result':'Identified';fileStatus.textContent=file.name+' has been scanned.'}catch(error){emptyState.hidden=false;emptyState.replaceChildren();const message=document.createElement('div');message.className='scan-error';message.textContent=error.message;emptyState.append(message);resultStatus.textContent='Needs attention'}}
-fileInput.addEventListener('change',()=>identifyFile(fileInput.files[0]));cameraInput.addEventListener('change',()=>identifyFile(cameraInput.files[0]));['dragenter','dragover'].forEach(name=>dropZone.addEventListener(name,event=>{event.preventDefault();dropZone.classList.add('dragging')}));['dragleave','drop'].forEach(name=>dropZone.addEventListener(name,event=>{event.preventDefault();dropZone.classList.remove('dragging')}));dropZone.addEventListener('drop',event=>identifyFile(event.dataTransfer.files[0]));scanAgain.addEventListener('click',()=>fileInput.click());
-</script></body></html>
+
+<script src="mobile-api-config.js"></script>
+<script>
+const apiBaseUrl = (window.WHATPART_API_URL || '').replace(/\/$/, '');
+const fileInput = document.querySelector('#part-photo');
+const cameraInput = document.querySelector('#camera-photo');
+const dropZone = document.querySelector('#drop-zone');
+const fileStatus = document.querySelector('#file-status');
+const emptyState = document.querySelector('#empty-state');
+const resultContent = document.querySelector('#result-content');
+const resultStatus = document.querySelector('#result-status');
+const purchaseList = document.querySelector('#purchase-list');
+const fitmentSummary = document.querySelector('#fitment-summary');
+const catalogStatus = document.querySelector('#catalog-status');
+const crossReferenceList = document.querySelector('#cross-reference-list');
+const resultFields = {
+  name: document.querySelector('#result-name'),
+  description: document.querySelector('#result-description'),
+  confidence: document.querySelector('#result-confidence'),
+  partNumber: document.querySelector('#result-part-number')
+};
+
+function vehiclePayloadFromForm() {
+  return {
+    year: document.querySelector('#vehicle-year').value.trim(),
+    make: document.querySelector('#vehicle-make').value.trim(),
+    model: document.querySelector('#vehicle-model').value.trim(),
+    engine: document.querySelector('#vehicle-engine').value.trim()
+  };
+}
+
+function renderPurchaseLinks(links = []) {
+  purchaseList.innerHTML = '';
+  if (!links.length) {
+    const item = document.createElement('li');
+    item.textContent = 'No purchase links available yet.';
+    purchaseList.appendChild(item);
+    return;
+  }
+
+  links.forEach((link) => {
+    const item = document.createElement('li');
+    const anchor = document.createElement('a');
+    anchor.href = link.url;
+    anchor.target = '_blank';
+    anchor.rel = 'noreferrer';
+    anchor.textContent = link.label;
+    item.appendChild(anchor);
+    purchaseList.appendChild(item);
+  });
+}
+
+function renderCrossReferences(items = []) {
+  crossReferenceList.innerHTML = '';
+  if (!items.length) {
+    const item = document.createElement('li');
+    item.textContent = 'No cross references available yet.';
+    crossReferenceList.appendChild(item);
+    return;
+  }
+
+  items.forEach((itemData) => {
+    const item = document.createElement('li');
+    const details = `${itemData.brand || 'Brand'} · ${itemData.notes || 'Candidate match'}`;
+    const strong = document.createElement('strong');
+    strong.textContent = itemData.partNumber || 'Unknown';
+    const span = document.createElement('span');
+    span.textContent = details;
+    item.appendChild(strong);
+    item.appendChild(span);
+    crossReferenceList.appendChild(item);
+  });
+}
+
+function displayResult(data) {
+  resultContent.hidden = false;
+  emptyState.hidden = true;
+  resultFields.name.textContent = data.partName || 'Unknown part';
+  resultFields.description.textContent = data.description || 'AI candidate result based on your uploaded image.';
+  resultFields.confidence.textContent = data.confidence ? `${Math.round(data.confidence)}%` : 'N/A';
+  resultFields.partNumber.textContent = data.partNumber || 'N/A';
+  fitmentSummary.textContent = data.fitmentSummary || 'No fitment summary available yet.';
+  catalogStatus.textContent = data.catalogStatus || 'Catalog status unavailable.';
+  renderCrossReferences(data.crossReferences || []);
+  renderPurchaseLinks(data.purchaseLinks || []);
+}
+
+async function identifyFile(file) {
+  if (!file) return;
+
+  const source = document.querySelector('input[name="source"]:checked')?.value || 'aftermarket';
+  const vehicle = vehiclePayloadFromForm();
+  const formData = new FormData();
+  formData.append('photo', file);
+  formData.append('source', source);
+  formData.append('vehicle', JSON.stringify(vehicle));
+
+  fileStatus.textContent = `${file.name} is ready to scan.`;
+  resultStatus.textContent = 'Scanning';
+  emptyState.hidden = true;
+  resultContent.hidden = true;
+
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/identify`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Unable to identify the part right now.');
+    }
+
+    const data = await response.json();
+    displayResult(data);
+    resultStatus.textContent = data.demo ? 'Demo result' : 'Match found';
+    fileStatus.textContent = `${file.name} scanned.`;
+  } catch (error) {
+    resultStatus.textContent = 'Error';
+    fileStatus.textContent = error.message || 'Scan failed. Please try again.';
+    emptyState.hidden = false;
+    resultContent.hidden = true;
+  }
+}
+
+fileInput.addEventListener('change', () => identifyFile(fileInput.files[0]));
+cameraInput.addEventListener('change', () => identifyFile(cameraInput.files[0]));
+['dragenter', 'dragover'].forEach((eventName) => {
+  dropZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    dropZone.style.borderColor = 'rgba(82, 217, 255, 0.7)';
+    dropZone.style.background = 'linear-gradient(180deg, rgba(13, 31, 41, 0.86), rgba(16, 21, 31, 0.9))';
+  });
+});
+['dragleave', 'drop'].forEach((eventName) => {
+  dropZone.addEventListener(eventName, (event) => {
+    event.preventDefault();
+    dropZone.style.borderColor = 'rgba(137, 175, 206, 0.38)';
+    dropZone.style.background = 'linear-gradient(180deg, rgba(11, 24, 33, 0.7), rgba(15, 22, 31, 0.85))';
+  });
+});
+
+dropZone.addEventListener('drop', (event) => {
+  const files = event.dataTransfer.files;
+  if (files && files[0]) identifyFile(files[0]);
+});
+</script>
+</body>
+</html>
