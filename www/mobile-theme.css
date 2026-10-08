@@ -1,0 +1,112 @@
+/* Shared desktop visual language, tuned for narrow Capacitor screens. */
+:root {
+  --mobile-gutter: max(15px, env(safe-area-inset-left));
+}
+
+@media (max-width: 760px) {
+  html,
+  body {
+    min-width: 320px;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 22px var(--mobile-gutter) 34px;
+  }
+
+  .topbar {
+    margin-bottom: 62px;
+  }
+
+  .brand {
+    font-size: 21px;
+  }
+
+  .top-note {
+    display: flex;
+    font-size: 9px;
+    letter-spacing: .08em;
+  }
+
+  .hero {
+    margin-bottom: 30px;
+  }
+
+  .hero h1 {
+    font-size: clamp(42px, 13vw, 54px);
+    line-height: .98;
+  }
+
+  .hero-copy {
+    max-width: 38rem;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .panel {
+    border-radius: 20px;
+  }
+
+  .upload-panel {
+    padding: 9px;
+  }
+
+  .drop-zone {
+    min-height: min(420px, 62dvh);
+    padding: 24px 18px;
+  }
+
+  .drop-zone h2 {
+    font-size: 22px;
+  }
+
+  .results-panel {
+    padding: 22px;
+  }
+
+  .panel-heading h2 {
+    font-size: 23px;
+  }
+
+  button,
+  label[for="part-photo"],
+  label[for="camera-photo"] {
+    min-height: 44px;
+  }
+
+  footer {
+    gap: 6px;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-note {
+    display: none;
+  }
+
+  .hero h1 {
+    font-size: 46px;
+  }
+
+  .drop-zone {
+    min-height: 360px;
+  }
+}
