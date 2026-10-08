@@ -71,6 +71,16 @@ function isValidSource(source) {
     return source === 'oem' || source === 'aftermarket';
 }
 
+function getOpenAIErrorMessage(status, code) {
+    if (status === 401) return 'OpenAI rejected the API key. Check that your key is active and copied correctly, then restart the server.';
+    if (status === 403) return 'This OpenAI key does not have access to the configured model. Check your project permissions and model access.';
+    if (status === 429 && code === 'insufficient_quota') return 'The OpenAI account has no available API quota. Check billing and usage limits in your OpenAI account.';
+    if (status === 429) return 'OpenAI rate limit reached. Wait a moment and try again.';
+    if (status === 400 && code === 'model_not_found') return 'The configured OpenAI vision model is unavailable to this account. Check OPENAI_VISION_MODEL.';
+    if (status >= 500) return 'OpenAI is temporarily unavailable. Try the scan again shortly.';
+    return `OpenAI could not process the scan (HTTP ${status}). Check the server configuration and try again.`;
+}
+
 async function lookupCatalog({ vehicle, partName, partNumber, source }) {
     const catalogUrl = process.env.CATALOG_API_URL;
     const provider = process.env.CATALOG_PROVIDER || 'not configured';
@@ -149,7 +159,15 @@ app.post('/api/identify', upload.single('photo'), async (request, response) => {
                 ] }]
             })
         });
-        if (!aiResponse.ok) throw new Error(`AI service returned ${aiResponse.status}.`);
+        if (!aiResponse.ok) {
+            const errorBody = await aiResponse.json().catch(() => ({}));
+            const providerError = errorBody.error || {};
+            const error = new Error(getOpenAIErrorMessage(aiResponse.status, providerError.code));
+            error.publicMessage = error.message;
+            error.providerStatus = aiResponse.status;
+            error.providerCode = providerError.code || providerError.type;
+            throw error;
+        }
         const completion = await aiResponse.json();
         const content = completion.choices?.[0]?.message?.content;
         if (!content) throw new Error('AI service returned an empty result.');
@@ -162,8 +180,8 @@ app.post('/api/identify', upload.single('photo'), async (request, response) => {
             demo: false
         });
     } catch (error) {
-        console.error(error);
-        return response.status(502).json({ error: 'The identification service is unavailable right now.' });
+        console.error('OpenAI identification failed:', error.providerStatus || error.message);
+        return response.status(502).json({ error: error.publicMessage || 'The identification service is unavailable right now.' });
     }
 });
 

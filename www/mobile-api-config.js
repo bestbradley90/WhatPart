@@ -9,3 +9,12 @@ if (!document.querySelector('link[data-whatpart-mobile-theme]')) {
   mobileTheme.dataset.whatpartMobileTheme = 'true';
   document.head.appendChild(mobileTheme);
 }
+
+const priceSearchScript = document.createElement('script');
+priceSearchScript.src = 'price-search.js';
+priceSearchScript.onload = () => {
+  const vehicleSelectsScript = document.createElement('script');
+  vehicleSelectsScript.src = 'vehicle-selects.js';
+  document.body.appendChild(vehicleSelectsScript);
+};
+document.body.appendChild(priceSearchScript);

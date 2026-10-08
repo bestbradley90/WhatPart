@@ -9,13 +9,13 @@ AI-powered automotive parts identification and fitment app.
 3. Start the app with `npm start`.
 4. Open `http://localhost:3000`.
 
-Without an API key, uploads return a clearly labeled demo result. To enable real image identification, create a `.env` file with:
+Without an API key, uploads return a clearly labeled demo result. To enable real image identification, copy `.env.example` to `.env`, replace the placeholder with an active OpenAI API key, and restart `npm start`:
 
 ```text
-OPENAI_API_KEY=your_key_here
+OPENAI_API_KEY=your_real_key_here
 ```
 
-The API key stays on the server and is never sent to the browser.
+The API key stays on the server and is never sent to the browser. Do not commit or share `.env`; it is ignored by Git. ChatGPT subscriptions and API usage are managed separately, so check API billing if the account has no quota.
 
 ## Mobile app setup
 
