@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 const multer = require('multer');
 require('dotenv').config();
+const { lookupCatalog } = require('./catalogAdapter');
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -85,49 +86,6 @@ function getOpenAIErrorMessage(status, code) {
     if (status === 400 && code === 'model_not_found') return 'The configured OpenAI vision model is unavailable to this account. Check OPENAI_VISION_MODEL.';
     if (status >= 500) return 'OpenAI is temporarily unavailable. Try the scan again shortly.';
     return `OpenAI could not process the scan (HTTP ${status}). Check the server configuration and try again.`;
-}
-
-async function lookupCatalog({ vehicle, partName, partNumber, source }) {
-    const catalogUrl = process.env.CATALOG_API_URL;
-    const provider = process.env.CATALOG_PROVIDER || 'not configured';
-    if (!catalogUrl || !process.env.CATALOG_API_KEY) {
-        // Improved demo stub when no real provider is configured
-        return {
-            catalogVerified: false,
-            catalogProvider: provider,
-            catalogStatus: 'AI candidate — catalog not connected yet',
-            fitmentSummary: `Candidate fitment for ${vehicleLabel(vehicle) || 'unspecified vehicle'}. Connect a catalog provider for confirmed interchange.`,
-            crossReferences: [
-                { partNumber: partNumber || 'CAND-001', brand: 'Example aftermarket', notes: 'Candidate only — verify before ordering' },
-                { partNumber: 'CAND-002', brand: 'Example OEM equivalent', notes: 'Candidate only' }
-            ]
-        };
-    }
-
-    try {
-        const catalogResponse = await fetch(catalogUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${process.env.CATALOG_API_KEY}`
-            },
-            body: JSON.stringify({ vehicle, partName, partNumber, source }),
-            signal: AbortSignal.timeout(10000)
-        });
-        if (!catalogResponse.ok) throw new Error(`Catalog provider returned ${catalogResponse.status}.`);
-        const catalogResult = await catalogResponse.json();
-        return {
-            catalogVerified: true,
-            catalogProvider: provider,
-            catalogStatus: 'Confirmed by catalog provider',
-            fitmentSummary: catalogResult.fitmentSummary,
-            crossReferences: Array.isArray(catalogResult.crossReferences) ? catalogResult.crossReferences : [],
-            purchaseLinks: Array.isArray(catalogResult.purchaseLinks) ? catalogResult.purchaseLinks : []
-        };
-    } catch (error) {
-        console.error(`Catalog lookup failed (${provider}):`, error.message);
-        return { catalogVerified: false, catalogProvider: provider, catalogStatus: 'Catalog lookup unavailable' };
-    }
 }
 
 app.post('/api/identify', upload.single('photo'), async (request, response) => {
