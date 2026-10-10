@@ -19,9 +19,44 @@ The API key stays on the server and is never sent to the browser. Do not commit 
 
 ## New in latest update
 
+- **Modular catalog adapter** (`catalogAdapter.js`): clean contract, easy to swap providers.
 - **Free-tier scan quota**: 8 scans per IP before a soft paywall message (in-memory, resets on restart). Response includes `scansRemaining`.
-- **`POST /api/feedback`**: Send `{ correct: true/false, partName, partNumber, notes, vehicle }` to log user corrections. Currently logs to console + in-memory array. Use this to improve prompts and later train better models.
+- **`POST /api/feedback`**: Send `{ correct: true/false, partName, partNumber, notes, vehicle }` to log user corrections. Currently logs to console + in-memory array.
 - Improved demo catalog stub that returns candidate cross-references even when no real provider is configured.
+
+## Catalog adapter
+
+The adapter lives in `catalogAdapter.js` and is called from `server.js`.
+
+**Recommended most affordable option right now: PartsTech**
+- Genuine free tier ($0) with unlimited parts lookup, suppliers, VIN, diagrams.
+- Partner External API for embedding.
+- Paid starts around $45–50/mo.
+- Signup / docs: https://partstech.com/
+
+To use it:
+1. Sign up for PartsTech (start free).
+2. Get partner API access / credentials.
+3. Set in `.env`:
+   ```
+   CATALOG_PROVIDER=partstech
+   CATALOG_API_URL=https://api.partstech.com/...
+   CATALOG_API_KEY=your_key
+   ```
+4. Fill in the `partsTechLookup` function in `catalogAdapter.js` (currently a stub).
+
+Generic provider also works: just set `CATALOG_PROVIDER`, `CATALOG_API_URL`, and `CATALOG_API_KEY` and return the expected shape.
+
+**Expected response shape**
+```js
+{
+  fitmentSummary: "string",
+  crossReferences: [{ partNumber, brand, notes }],
+  purchaseLinks: [{ label, url }]  // optional
+}
+```
+
+Until a real provider is connected, results stay clearly labeled as AI candidates.
 
 ## Mobile app setup
 
@@ -41,20 +76,9 @@ After each scan, WhatPart provides search links for the selected OEM or aftermar
 
 The scan form also accepts vehicle year, make, model, and engine, and mobile devices can use the rear-camera button while the part is still installed. AI fitment and cross-reference values are candidates until a commercial parts catalog API is connected for exact confirmation.
 
-## Catalog provider plan
-
-For exact vehicle fitment, interchange, inventory, and purchasing, connect one licensed catalog provider through the adapter settings in `.env`:
-
-- **PartsTech / OEC**: strong North American supplier coverage and ordering workflows for repair shops.
-- **WHI Solutions / Nexpart**: commercial aftermarket and OE catalog/e-commerce data for distributors and suppliers.
-- **Epicor aftermarket**: established commercial catalog and parts data used by automotive businesses.
-- **Auto Care ACES/PIES**: industry data standards for normalizing fitment and product information when you license data directly from manufacturers or a data provider.
-
-Set `CATALOG_PROVIDER`, `CATALOG_API_URL`, and `CATALOG_API_KEY` after choosing a provider and receiving its API contract. The adapter sends `{ vehicle, partName, partNumber, source }` and expects normalized `fitmentSummary`, `crossReferences`, and optional `purchaseLinks` in return. Provider credentials and exact endpoint formats are commercial, so the app does not guess or scrape them. Until configured, the app clearly labels results as AI candidates.
-
 ## Next priorities (in progress)
 
-1. Wire a real catalog provider (biggest remaining gap).
+1. Wire real PartsTech (or other) credentials into the adapter.
 2. Persist feedback and scan history (currently in-memory).
 3. Add localStorage vehicle garage on the client.
 4. Stripe (or RevenueCat) for paid plans that unlock confirmed catalog results and higher limits.
