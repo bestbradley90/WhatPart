@@ -1,4 +1,3 @@
-const path = require('path');
 const express = require('express');
 const multer = require('multer');
 require('dotenv').config();
@@ -15,145 +14,138 @@ const feedbackLog = [];
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: maxFileSize },
-    fileFilter: (request, file, callback) => callback(null, allowedTypes.has(file.mimetype))
+    fileFilter: (req, file, cb) => cb(null, allowedTypes.has(file.mimetype))
 });
 
-const allowedOrigins = (process.env.CORS_ORIGINS || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-app.use((request, response, next) => {
-    const origin = request.headers.origin;
+const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
     if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-        if (origin) response.setHeader('Access-Control-Allow-Origin', origin);
-        response.setHeader('Vary', 'Origin');
-        response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-        response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-        response.setHeader('Access-Control-Max-Age', '86400');
+        if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        res.setHeader('Access-Control-Max-Age', '86400');
     }
-    if (request.method === 'OPTIONS') return response.sendStatus(204);
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
     next();
 });
 
 app.use(express.static(__dirname));
 app.use(express.json());
 
-function clientKey(request) {
-    return request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress || 'unknown';
+function clientKey(req) {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
 }
 
 function getPurchaseLinks(partName, partNumber, source) {
     const searchTerm = [partNumber, partName].filter(Boolean).join(' ') || 'automotive part';
-    const encodedSearch = encodeURIComponent(searchTerm);
+    const encoded = encodeURIComponent(searchTerm);
 
-    // Affiliate IDs from environment (set these in .env after joining the programs)
-    const ebayCampId = process.env.AFFILIATE_EBAY_CAMPID || '';
+    const ebayCamp = process.env.AFFILIATE_EBAY_CAMPID || '';
     const amazonTag = process.env.AFFILIATE_AMAZON_TAG || '';
-    const rockAutoAff = process.env.AFFILIATE_ROCKAUTO || '';
+    const rockAff = process.env.AFFILIATE_ROCKAUTO || '';
 
-    let ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodedSearch}`;
-    if (ebayCampId) {
-        // Simple campid append (works with modern EPN tracking; full rover also possible)
-        ebayUrl += `&campid=${ebayCampId}&mkcid=1&mkrid=711-53200-19255-0&toolid=10001`;
-    }
+    let ebay = `https://www.ebay.com/sch/i.html?_nkw=${encoded}`;
+    if (ebayCamp) ebay += `&campid=${ebayCamp}&mkcid=1&mkrid=711-53200-19255-0&toolid=10001`;
 
-    let amazonUrl = `https://www.amazon.com/s?k=${encodedSearch}`;
-    if (amazonTag) {
-        amazonUrl += `&tag=${amazonTag}`;
-    }
+    let amazon = `https://www.amazon.com/s?k=${encoded}`;
+    if (amazonTag) amazon += `&tag=${amazonTag}`;
 
-    let rockAutoUrl = `https://www.rockauto.com/en/catalog/?q=${encodedSearch}`;
-    if (rockAutoAff) {
-        rockAutoUrl += `&aff=${rockAutoAff}`;
-    }
+    let rock = `https://www.rockauto.com/en/catalog/?q=${encoded}`;
+    if (rockAff) rock += `&aff=${rockAff}`;
 
     const links = [
-        { label: 'Search eBay', url: ebayUrl },
-        { label: 'Search Amazon', url: amazonUrl },
-        { label: 'Search RockAuto', url: rockAutoUrl }
+        { label: 'Search eBay', url: ebay },
+        { label: 'Search Amazon', url: amazon },
+        { label: 'Search RockAuto', url: rock }
     ];
 
     if (source === 'oem') {
-        const googleUrl = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(`${searchTerm} OEM`)}`;
-        links.unshift({ label: 'Search OEM parts', url: googleUrl });
+        links.unshift({
+            label: 'Search OEM parts',
+            url: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(searchTerm + ' OEM')}`
+        });
     }
-
     return links;
 }
 
-function getVehicle(request) {
+function getVehicle(req) {
     try {
-        const vehicle = JSON.parse(request.body.vehicle || '{}');
+        const v = JSON.parse(req.body.vehicle || '{}');
         return {
-            year: String(vehicle.year || '').trim(),
-            make: String(vehicle.make || '').trim(),
-            model: String(vehicle.model || '').trim(),
-            engine: String(vehicle.engine || '').trim()
+            year: String(v.year || '').trim(),
+            make: String(v.make || '').trim(),
+            model: String(v.model || '').trim(),
+            engine: String(v.engine || '').trim()
         };
-    } catch (error) {
+    } catch {
         return { year: '', make: '', model: '', engine: '' };
     }
 }
 
-function vehicleLabel(vehicle) {
-    return [vehicle.year, vehicle.make, vehicle.model, vehicle.engine].filter(Boolean).join(' ');
+function vehicleLabel(v) {
+    return [v.year, v.make, v.model, v.engine].filter(Boolean).join(' ');
 }
 
-function isValidSource(source) {
-    return source === 'oem' || source === 'aftermarket';
+function isValidSource(s) {
+    return s === 'oem' || s === 'aftermarket';
 }
 
-function getOpenAIErrorMessage(status, code) {
-    if (status === 401) return 'OpenAI rejected the API key. Check that your key is active and copied correctly, then restart the server.';
-    if (status === 403) return 'This OpenAI key does not have access to the configured model. Check your project permissions and model access.';
-    if (status === 429 && code === 'insufficient_quota') return 'The OpenAI account has no available API quota. Check billing and usage limits in your OpenAI account.';
-    if (status === 429) return 'OpenAI rate limit reached. Wait a moment and try again.';
-    if (status === 400 && code === 'model_not_found') return 'The configured OpenAI vision model is unavailable to this account. Check OPENAI_VISION_MODEL.';
-    if (status >= 500) return 'OpenAI is temporarily unavailable. Try the scan again shortly.';
-    return `OpenAI could not process the scan (HTTP ${status}). Check the server configuration and try again.`;
+function openAIError(status, code) {
+    if (status === 401) return 'OpenAI rejected the API key. Check it and restart.';
+    if (status === 403) return 'This key lacks access to the model.';
+    if (status === 429 && code === 'insufficient_quota') return 'No OpenAI quota left. Check billing.';
+    if (status === 429) return 'Rate limited. Try again shortly.';
+    if (status === 400 && code === 'model_not_found') return 'Vision model unavailable.';
+    if (status >= 500) return 'OpenAI is down. Try again.';
+    return `OpenAI error (HTTP ${status}).`;
 }
 
-app.post('/api/identify', upload.single('photo'), async (request, response) => {
-    const key = clientKey(request);
+app.post('/api/identify', upload.single('photo'), async (req, res) => {
+    const key = clientKey(req);
     const used = scanCounts.get(key) || 0;
     if (used >= FREE_SCAN_LIMIT) {
-        return response.status(402).json({
-            error: `Free scan limit reached (${FREE_SCAN_LIMIT}). Paid plans with confirmed catalog results coming soon.`,
-            upgrade: true
+        return res.status(402).json({
+            error: `Free limit reached (${FREE_SCAN_LIMIT}). Upgrade for confirmed catalog results.`,
+            upgrade: true,
+            scansRemaining: 0
         });
     }
 
-    if (!request.file) {
-        return response.status(400).json({ error: 'Please upload a JPG, PNG, or WEBP image under 10 MB.' });
+    if (!req.file) {
+        return res.status(400).json({ error: 'Upload a JPG, PNG, or WEBP under 10 MB.' });
     }
 
-    const source = isValidSource(request.body.source) ? request.body.source : 'aftermarket';
-    const vehicle = getVehicle(request);
+    const source = isValidSource(req.body.source) ? req.body.source : 'aftermarket';
+    const vehicle = getVehicle(req);
     const vehicleText = vehicleLabel(vehicle) || 'an unspecified vehicle';
 
     if (!process.env.OPENAI_API_KEY) {
         scanCounts.set(key, used + 1);
-        const demoPart = 'Brake pad set';
-        return response.json({
-            demo: true, source, partName: demoPart,
-            description: 'Demo response: add an OpenAI key to identify the uploaded component with vision.',
-            confidence: 86, partNumber: null,
-            fitmentSummary: `Demo fitment for ${vehicleText}. Add an exact vehicle and parts catalog to confirm compatibility.`,
+        return res.json({
+            demo: true,
+            source,
+            partName: 'Brake pad set',
+            description: 'Demo result. Add an OpenAI key for real vision identification.',
+            confidence: 86,
+            partNumber: null,
+            fitmentSummary: `Demo fitment for ${vehicleText}.`,
             crossReferences: [
-                { partNumber: 'DEMO-REF-001', brand: 'Example brand', notes: 'Candidate only' },
-                { partNumber: 'DEMO-REF-002', brand: 'Example brand', notes: 'Candidate only' }
+                { partNumber: 'DEMO-001', brand: 'Example', notes: 'Candidate only' },
+                { partNumber: 'DEMO-002', brand: 'Example', notes: 'Candidate only' }
             ],
             catalogVerified: false,
             catalogProvider: process.env.CATALOG_PROVIDER || 'not configured',
-            catalogStatus: 'Demo result; catalog not checked',
-            purchaseLinks: getPurchaseLinks(demoPart, null, source),
+            catalogStatus: 'Demo — catalog not checked',
+            purchaseLinks: getPurchaseLinks('Brake pad set', null, source),
             scansRemaining: FREE_SCAN_LIMIT - (used + 1)
         });
     }
 
     try {
-        const image = request.file.buffer.toString('base64');
-        const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        const image = req.file.buffer.toString('base64');
+        const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -163,58 +155,66 @@ app.post('/api/identify', upload.single('photo'), async (request, response) => {
             body: JSON.stringify({
                 model: process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini',
                 response_format: { type: 'json_object' },
-                messages: [{ role: 'user', content: [
-                    { type: 'text', text: `Identify this automotive part for ${vehicleText} and a ${source === 'oem' ? 'genuine OEM' : 'quality aftermarket'} purchase. Return JSON with partName, description, confidence (number 0-100), partNumber (string or null), and fitmentSummary. Do not invent an exact part number when it cannot be read.` },
-                    { type: 'image_url', image_url: { url: `data:${request.file.mimetype};base64,${image}` } }
-                ] }]
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: `Identify this automotive part for ${vehicleText} (${source}). Return JSON: partName, description, confidence (0-100), partNumber (string or null), fitmentSummary. Never invent a part number.` },
+                        { type: 'image_url', image_url: { url: `data:${req.file.mimetype};base64,${image}` } }
+                    ]
+                }]
             })
         });
-        if (!aiResponse.ok) {
-            const errorBody = await aiResponse.json().catch(() => ({}));
-            const providerError = errorBody.error || {};
-            const error = new Error(getOpenAIErrorMessage(aiResponse.status, providerError.code));
-            error.publicMessage = error.message;
-            error.providerStatus = aiResponse.status;
-            error.providerCode = providerError.code || providerError.type;
-            throw error;
+
+        if (!aiRes.ok) {
+            const body = await aiRes.json().catch(() => ({}));
+            const err = new Error(openAIError(aiRes.status, body.error?.code));
+            err.publicMessage = err.message;
+            throw err;
         }
-        const completion = await aiResponse.json();
+
+        const completion = await aiRes.json();
         const content = completion.choices?.[0]?.message?.content;
-        if (!content) throw new Error('AI service returned an empty result.');
+        if (!content) throw new Error('Empty AI result.');
         const result = JSON.parse(content);
-        if (!result.partName || typeof result.partName !== 'string') throw new Error('AI service returned an invalid result.');
-        const catalogResult = await lookupCatalog({ vehicle, partName: result.partName, partNumber: result.partNumber, source });
+        if (!result.partName) throw new Error('Invalid AI result.');
+
+        const catalog = await lookupCatalog({ vehicle, partName: result.partName, partNumber: result.partNumber, source });
         scanCounts.set(key, used + 1);
-        return response.json({
-            ...result, source, vehicle, ...catalogResult,
-            purchaseLinks: catalogResult.purchaseLinks?.length ? catalogResult.purchaseLinks : getPurchaseLinks(result.partName, result.partNumber, source),
+
+        res.json({
+            ...result,
+            source,
+            vehicle,
+            ...catalog,
+            purchaseLinks: catalog.purchaseLinks?.length ? catalog.purchaseLinks : getPurchaseLinks(result.partName, result.partNumber, source),
             demo: false,
             scansRemaining: FREE_SCAN_LIMIT - (used + 1)
         });
-    } catch (error) {
-        console.error('OpenAI identification failed:', error.providerStatus || error.message);
-        return response.status(502).json({ error: error.publicMessage || 'The identification service is unavailable right now.' });
+    } catch (err) {
+        console.error('Identify failed:', err.message);
+        res.status(502).json({ error: err.publicMessage || 'Identification service unavailable.' });
     }
 });
 
-app.post('/api/feedback', (request, response) => {
-    const { correct, partName, partNumber, notes, vehicle } = request.body || {};
-    feedbackLog.push({
+app.post('/api/feedback', (req, res) => {
+    const { correct, partName, partNumber, notes, vehicle } = req.body || {};
+    const entry = {
         timestamp: new Date().toISOString(),
         correct: Boolean(correct),
         partName, partNumber, notes, vehicle,
-        ip: clientKey(request)
-    });
-    console.log('Feedback received:', feedbackLog[feedbackLog.length - 1]);
-    response.json({ ok: true, message: 'Thanks — feedback logged.' });
+        ip: clientKey(req)
+    };
+    feedbackLog.push(entry);
+    console.log('Feedback:', entry);
+    res.json({ ok: true });
 });
 
-app.use((error, request, response, next) => {
-    if (error instanceof multer.MulterError || error.message === 'File type not allowed') {
-        return response.status(400).json({ error: 'Please upload a JPG, PNG, or WEBP image under 10 MB.' });
+app.use((err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: 'Image too large or invalid type (max 10 MB, JPG/PNG/WEBP).' });
     }
-    console.error(error);
-    return response.status(500).json({ error: 'The server encountered an unexpected error.' });
+    console.error(err);
+    res.status(500).json({ error: 'Unexpected server error.' });
 });
 
-app.listen(port, () => console.log(`WhatPart is running at http://localhost:${port}`));
+app.listen(port, () => console.log(`WhatPart running at http://localhost:${port}`));
