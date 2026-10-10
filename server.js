@@ -7,15 +7,16 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 const maxFileSize = 10 * 1024 * 1024;
 const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const FREE_SCAN_LIMIT = 8;
+const scanCounts = new Map();
+const feedbackLog = [];
+
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: maxFileSize },
     fileFilter: (request, file, callback) => callback(null, allowedTypes.has(file.mimetype))
 });
 
-// The Capacitor client is hosted on a different origin from the API. Keep the
-// API usable from the configured mobile/web clients without allowing arbitrary
-// origins in production.
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -34,6 +35,11 @@ app.use((request, response, next) => {
 });
 
 app.use(express.static(__dirname));
+app.use(express.json());
+
+function clientKey(request) {
+    return request.headers['x-forwarded-for']?.split(',')[0]?.trim() || request.socket.remoteAddress || 'unknown';
+}
 
 function getPurchaseLinks(partName, partNumber, source) {
     const searchTerm = [partNumber, partName].filter(Boolean).join(' ') || 'automotive part';
@@ -85,7 +91,17 @@ async function lookupCatalog({ vehicle, partName, partNumber, source }) {
     const catalogUrl = process.env.CATALOG_API_URL;
     const provider = process.env.CATALOG_PROVIDER || 'not configured';
     if (!catalogUrl || !process.env.CATALOG_API_KEY) {
-        return { catalogVerified: false, catalogProvider: provider, catalogStatus: 'No catalog provider configured' };
+        // Improved demo stub when no real provider is configured
+        return {
+            catalogVerified: false,
+            catalogProvider: provider,
+            catalogStatus: 'AI candidate — catalog not connected yet',
+            fitmentSummary: `Candidate fitment for ${vehicleLabel(vehicle) || 'unspecified vehicle'}. Connect a catalog provider for confirmed interchange.`,
+            crossReferences: [
+                { partNumber: partNumber || 'CAND-001', brand: 'Example aftermarket', notes: 'Candidate only — verify before ordering' },
+                { partNumber: 'CAND-002', brand: 'Example OEM equivalent', notes: 'Candidate only' }
+            ]
+        };
     }
 
     try {
@@ -115,6 +131,15 @@ async function lookupCatalog({ vehicle, partName, partNumber, source }) {
 }
 
 app.post('/api/identify', upload.single('photo'), async (request, response) => {
+    const key = clientKey(request);
+    const used = scanCounts.get(key) || 0;
+    if (used >= FREE_SCAN_LIMIT) {
+        return response.status(402).json({
+            error: `Free scan limit reached (${FREE_SCAN_LIMIT}). Paid plans with confirmed catalog results coming soon.`,
+            upgrade: true
+        });
+    }
+
     if (!request.file) {
         return response.status(400).json({ error: 'Please upload a JPG, PNG, or WEBP image under 10 MB.' });
     }
@@ -124,6 +149,7 @@ app.post('/api/identify', upload.single('photo'), async (request, response) => {
     const vehicleText = vehicleLabel(vehicle) || 'an unspecified vehicle';
 
     if (!process.env.OPENAI_API_KEY) {
+        scanCounts.set(key, used + 1);
         const demoPart = 'Brake pad set';
         return response.json({
             demo: true, source, partName: demoPart,
@@ -137,7 +163,8 @@ app.post('/api/identify', upload.single('photo'), async (request, response) => {
             catalogVerified: false,
             catalogProvider: process.env.CATALOG_PROVIDER || 'not configured',
             catalogStatus: 'Demo result; catalog not checked',
-            purchaseLinks: getPurchaseLinks(demoPart, null, source)
+            purchaseLinks: getPurchaseLinks(demoPart, null, source),
+            scansRemaining: FREE_SCAN_LIMIT - (used + 1)
         });
     }
 
@@ -174,15 +201,29 @@ app.post('/api/identify', upload.single('photo'), async (request, response) => {
         const result = JSON.parse(content);
         if (!result.partName || typeof result.partName !== 'string') throw new Error('AI service returned an invalid result.');
         const catalogResult = await lookupCatalog({ vehicle, partName: result.partName, partNumber: result.partNumber, source });
+        scanCounts.set(key, used + 1);
         return response.json({
             ...result, source, vehicle, ...catalogResult,
             purchaseLinks: catalogResult.purchaseLinks?.length ? catalogResult.purchaseLinks : getPurchaseLinks(result.partName, result.partNumber, source),
-            demo: false
+            demo: false,
+            scansRemaining: FREE_SCAN_LIMIT - (used + 1)
         });
     } catch (error) {
         console.error('OpenAI identification failed:', error.providerStatus || error.message);
         return response.status(502).json({ error: error.publicMessage || 'The identification service is unavailable right now.' });
     }
+});
+
+app.post('/api/feedback', (request, response) => {
+    const { correct, partName, partNumber, notes, vehicle } = request.body || {};
+    feedbackLog.push({
+        timestamp: new Date().toISOString(),
+        correct: Boolean(correct),
+        partName, partNumber, notes, vehicle,
+        ip: clientKey(request)
+    });
+    console.log('Feedback received:', feedbackLog[feedbackLog.length - 1]);
+    response.json({ ok: true, message: 'Thanks — feedback logged.' });
 });
 
 app.use((error, request, response, next) => {
