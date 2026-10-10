@@ -45,14 +45,39 @@ function clientKey(request) {
 function getPurchaseLinks(partName, partNumber, source) {
     const searchTerm = [partNumber, partName].filter(Boolean).join(' ') || 'automotive part';
     const encodedSearch = encodeURIComponent(searchTerm);
-    const links = [
-        { label: 'Search eBay', url: `https://www.ebay.com/sch/i.html?_nkw=${encodedSearch}` },
-        { label: 'Search Amazon', url: `https://www.amazon.com/s?k=${encodedSearch}` },
-        { label: 'Search RockAuto', url: `https://www.rockauto.com/en/catalog/?q=${encodedSearch}` }
-    ];
-    if (source === 'oem') {
-        links.unshift({ label: 'Search OEM parts', url: `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(`${searchTerm} OEM`)}` });
+
+    // Affiliate IDs from environment (set these in .env after joining the programs)
+    const ebayCampId = process.env.AFFILIATE_EBAY_CAMPID || '';
+    const amazonTag = process.env.AFFILIATE_AMAZON_TAG || '';
+    const rockAutoAff = process.env.AFFILIATE_ROCKAUTO || '';
+
+    let ebayUrl = `https://www.ebay.com/sch/i.html?_nkw=${encodedSearch}`;
+    if (ebayCampId) {
+        // Simple campid append (works with modern EPN tracking; full rover also possible)
+        ebayUrl += `&campid=${ebayCampId}&mkcid=1&mkrid=711-53200-19255-0&toolid=10001`;
     }
+
+    let amazonUrl = `https://www.amazon.com/s?k=${encodedSearch}`;
+    if (amazonTag) {
+        amazonUrl += `&tag=${amazonTag}`;
+    }
+
+    let rockAutoUrl = `https://www.rockauto.com/en/catalog/?q=${encodedSearch}`;
+    if (rockAutoAff) {
+        rockAutoUrl += `&aff=${rockAutoAff}`;
+    }
+
+    const links = [
+        { label: 'Search eBay', url: ebayUrl },
+        { label: 'Search Amazon', url: amazonUrl },
+        { label: 'Search RockAuto', url: rockAutoUrl }
+    ];
+
+    if (source === 'oem') {
+        const googleUrl = `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(`${searchTerm} OEM`)}`;
+        links.unshift({ label: 'Search OEM parts', url: googleUrl });
+    }
+
     return links;
 }
 
